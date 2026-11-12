@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111a24">
+  <title>RMV — School Management</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
+    :root {
+      --ink: #17212b; --muted: #78838b; --line: #e9e9e4; --paper: #fff;
+      --canvas: #f7f7f4; --green: #2d5b48; --green-soft: #eaf1ec;
+      --gold: #c6a36a; --gold-soft: #f6f0e5; --red: #bd6257;
+      --shadow: 0 12px 34px rgba(27,39,45,.07);
+      font-family: "DM Sans", "Segoe UI", sans-serif;
+      color: var(--ink); background: var(--canvas);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .shell { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 252px; flex: 0 0 252px; min-height: 100vh; padding: 26px 16px 18px;
+      background: #14211f; color: #e8eee8; display: flex; flex-direction: column;
+      transition: transform .25s ease; z-index: 20;
+    }
+    .brand { display:flex; align-items:center; gap:12px; padding: 1px 10px 31px; }
+    .brand-mark { width:38px; height:38px; border:1px solid #bca273; color:#d5bb8c; display:grid; place-items:center; border-radius:12px; font-family:"Playfair Display",serif; font-size:18px; }
+    .brand-name { font:600 19px "Playfair Display",serif; letter-spacing:.3px; }
+    .brand-sub { color:#91a19a; font-size:10px; letter-spacing:1.55px; margin-top:3px; }
+    .nav-label { color:#82918b; font-size:10px; letter-spacing:1.5px; padding: 0 12px; margin: 4px 0 9px; }
+    .nav { display:grid; gap:4px; }
+    .nav button { width:100%; display:flex; align-items:center; gap:13px; border:0; color:#abb7b0; background:transparent; padding:11px 12px; border-radius:8px; text-align:left; font-size:13px; transition:.18s; }
+    .nav button:hover { color:#fff; background:#20302d; }
+    .nav button.active { background:#2d453c; color:#fff; box-shadow:inset 2px 0 #c6a36a; }
+    .nav-icon { display:inline-grid; place-items:center; width:19px; font-size:16px; color:#9baa9f; }
+    .nav-count { margin-left:auto; background:#bd6257; color:white; border-radius:10px; padding:2px 7px; font-size:10px; }
+    .sidebar-bottom { margin-top:auto; }
+    .year-card { border:1px solid #35443e; background:#1b2b27; padding:14px; border-radius:10px; margin:20px 4px; }
+    .year-card small { color:#9daaa2; font-size:10px; letter-spacing:1px; }
+    .year-card strong { display:block; font-size:13px; margin-top:7px; font-weight:500; }
+    .user-card { border-top:1px solid #35443e; padding:16px 6px 0; display:flex; align-items:center; gap:10px; }
+    .avatar { display:grid; place-items:center; background:#d9e3da; color:#315744; width:35px; height:35px; border-radius:50%; font-size:12px; font-weight:700; flex:0 0 auto; }
+    .user-name { font-size:12px; font-weight:600; }
+    .user-role { color:#99a79f; font-size:10px; margin-top:3px; }
+    .logout { margin-left:auto; color:#aab7b0; border:0; background:transparent; font-size:17px; }
+    .main { flex:1; min-width:0; }
+    .topbar { height:75px; background:rgba(255,255,255,.92); border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 36px; position:sticky; top:0; z-index:10; }
+    .top-left { display:flex; align-items:center; gap:15px; }
+    .menu-toggle { display:none; border:0; background:transparent; font-size:21px; color:var(--ink); }
+    .crumb { font-size:12px; color:var(--muted); }
+    .crumb strong { color:var(--ink); font-weight:600; }
+    .top-actions { display:flex; align-items:center; gap:18px; }
+    .school-year { border:1px solid var(--line); border-radius:6px; background:white; padding:8px 11px; color:#55615f; font-size:11px; }
+    .top-date { color:var(--muted); font-size:11px; }
+    .content { max-width:1420px; margin:0 auto; padding:32px 36px 50px; }
+    .page-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:25px; }
+    .eyebrow { color:var(--gold); text-transform:uppercase; letter-spacing:1.8px; font-size:10px; font-weight:700; margin-bottom:8px; }
+    h1 { font:600 29px "Playfair Display", Georgia, serif; margin:0; letter-spacing:-.3px; }
+    .subtitle { color:var(--muted); font-size:12px; margin-top:8px; }
+    .button { border:1px solid transparent; border-radius:6px; padding:10px 15px; font-size:11px; font-weight:600; transition:.2s; }
+    .button-primary { background:var(--green); color:white; }
+    .button-primary:hover { background:#214638; transform:translateY(-1px); }
+    .button-outline { border-color:#dedfd9; background:white; color:#394740; }
+    .button-outline:hover { border-color:#9ca99e; }
+    .button-gold { background:var(--gold-soft); color:#896d3d; border-color:#eee3cf; }
+    .grid { display:grid; gap:16px; }
+    .stats { grid-template-columns:repeat(4,minmax(0,1fr)); margin-bottom:18px; }
+    .card { background:var(--paper); border:1px solid #eeefeb; border-radius:10px; box-shadow:0 2px 9px rgba(20,33,31,.025); }
+    .stat-card { padding:18px 19px 16px; position:relative; overflow:hidden; }
+    .stat-top { display:flex; align-items:center; justify-content:space-between; }
+    .stat-title { color:#727d79; font-size:11px; }
+    .stat-icon { width:30px; height:30px; display:grid; place-items:center; border-radius:8px; background:var(--green-soft); color:var(--green); font-size:15px; }
+    .stat-icon.gold { background:var(--gold-soft); color:#9b7a43; }
+    .stat-icon.rose { background:#f7ecea; color:var(--red); }
+    .stat-value { font:600 25px "Playfair Display", Georgia, serif; margin-top:13px; }
+    .stat-foot { display:flex; gap:5px; align-items:center; color:var(--muted); font-size:10px; margin-top:7px; }
+    .positive { color:#4f8667; font-weight:600; }
+    .overview-grid { grid-template-columns:minmax(0,1.65fr) minmax(255px,.9fr); margin-bottom:18px; }
+    .panel { padding:19px 20px; min-width:0; }
+    .panel-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+    .panel-title { font-size:13px; font-weight:700; }
+    .panel-note { color:var(--muted); font-size:10px; margin-top:4px; }
+    .select-small { border:1px solid var(--line); background:white; border-radius:5px; padding:7px 9px; font-size:10px; color:#626c68; }
+    .chart { height:190px; display:flex; align-items:flex-end; justify-content:space-around; gap:12px; padding:18px 8px 0; border-bottom:1px solid #edf0eb; background:repeating-linear-gradient(to bottom,transparent 0,transparent 45px,#f2f3ef 46px); }
+    .chart-col { height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:7px; flex:1; position:relative; }
+    .bar-pair { display:flex; align-items:flex-end; justify-content:center; gap:4px; height:145px; width:100%; }
+    .bar { width:min(24px,32%); min-width:10px; border-radius:4px 4px 0 0; transition:height .3s; }
+    .bar.income { background:#315b49; }
+    .bar.expense { background:#d7c6a5; }
+    .chart-label { color:#929b96; font-size:9px; padding-bottom:7px; }
+    .legend { display:flex; justify-content:center; gap:17px; margin-top:13px; color:#77817c; font-size:9px; }
+    .legend i { width:7px; height:7px; display:inline-block; border-radius:2px; margin-right:5px; background:#315b49; }
+    .legend span+span i { background:#d7c6a5; }
+    .attendance { display:flex; align-items:center; gap:19px; padding:5px 0 16px; }
+    .donut { width:112px; height:112px; flex:0 0 112px; border-radius:50%; display:grid; place-items:center; background:conic-gradient(#315b49 0 88%, #ebeee9 88% 100%); position:relative; }
+    .donut:before { content:""; position:absolute; inset:12px; background:white; border-radius:50%; }
+    .donut span { position:relative; font:600 24px "Playfair Display",serif; }
+    .attendance-copy strong { font-size:13px; display:block; }
+    .attendance-copy small { color:var(--muted); font-size:10px; display:block; margin-top:5px; line-height:1.5; }
+    .mini-list { display:grid; gap:12px; }
+    .mini-item { display:flex; align-items:center; justify-content:space-between; font-size:10px; color:#64706a; }
+    .mini-item strong { color:var(--ink); font-size:11px; }
+    .mini-meter { width:94px; height:5px; border-radius:5px; background:#edf0eb; overflow:hidden; margin-left:auto; margin-right:9px; }
+    .mini-meter i { height:100%; display:block; border-radius:5px; background:#59816a; }
+    .table-panel { padding:0; overflow:hidden; }
+    .table-toolbar { padding:18px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); gap:12px; }
+    .table-wrap { overflow:auto; }
+    table { border-collapse:collapse; width:100%; white-space:nowrap; }
+    th { text-align:left; padding:12px 18px; color:#87908b; font-size:9px; text-transform:uppercase; letter-spacing:.85px; font-weight:600; background:#fcfcfa; }
+    td { padding:13px 18px; border-top:1px solid #f0f1ed; font-size:11px; color:#55615c; }
+    tbody tr:hover { background:#fbfcfa; }
+    .student-cell { display:flex; align-items:center; gap:9px; color:var(--ink); font-weight:600; }
+    .table-avatar { width:29px; height:29px; border-radius:50%; display:grid; place-items:center; color:#315744; background:#e8efe9; font-size:9px; font-weight:700; }
+    .status { display:inline-flex; align-items:center; gap:5px; border-radius:20px; padding:5px 8px; font-size:9px; background:var(--green-soft); color:#4c785c; }
+    .status:before { content:""; width:5px; height:5px; border-radius:50%; background:currentColor; }
+    .status.pending { background:#fbf2df; color:#a17c35; }
+    .status.inactive { background:#f5ecea; color:#a65d54; }
+    .text-link { border:0; background:transparent; color:var(--green); font-size:10px; font-weight:600; padding:4px; }
+    .table-search { border:1px solid var(--line); border-radius:6px; padding:8px 10px; width:190px; color:var(--ink); font-size:10px; outline:none; }
+    .table-search:focus, input:focus, select:focus { border-color:#86a392; box-shadow:0 0 0 3px rgba(49,91,73,.08); outline:none; }
+    .toolbar-actions { display:flex; gap:8px; align-items:center; }
+    .activity-list { display:grid; gap:0; }
+    .activity { display:flex; gap:12px; padding:12px 0; border-top:1px solid #f0f1ed; }
+    .activity-mark { width:28px; height:28px; flex:0 0 28px; border-radius:50%; display:grid; place-items:center; background:var(--green-soft); color:var(--green); font-size:11px; }
+    .activity-content { font-size:10px; color:#606b65; line-height:1.5; }
+    .activity-content strong { color:var(--ink); font-weight:600; }
+    .activity-content small { display:block; color:#98a09c; font-size:9px; margin-top:3px; }
+    .two-col { grid-template-columns:1fr 1fr; }
+    .document-card { padding:20px; display:flex; align-items:center; gap:14px; }
+    .document-icon { width:42px; height:46px; border-radius:7px; display:grid; place-items:center; color:#9a7842; background:var(--gold-soft); font-size:17px; }
+    .document-card strong { font-size:12px; }
+    .document-card p { color:var(--muted); font-size:10px; margin:5px 0 0; }
+    .empty { color:var(--muted); text-align:center; padding:30px; font-size:12px; }
+    .overlay { position:fixed; inset:0; background:rgba(18,30,27,.45); z-index:40; display:none; align-items:center; justify-content:center; padding:16px; }
+    .overlay.open { display:flex; }
+    .modal { width:min(520px,100%); max-height:90vh; overflow:auto; background:white; border-radius:12px; box-shadow:0 24px 80px rgba(0,0,0,.2); }
+    .modal-head { padding:20px 23px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); }
+    .modal-head h2 { font:600 20px "Playfair Display",serif; margin:0; }
+    .close { border:0; background:transparent; color:#78827d; font-size:22px; }
+    .modal-body { padding:21px 23px 24px; }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .field { display:grid; gap:6px; }
+    .field.full { grid-column:1/-1; }
+    .field label { color:#68736e; font-size:10px; font-weight:600; }
+    .field input, .field select { width:100%; border:1px solid #e3e6e1; border-radius:6px; padding:10px; font-size:11px; color:var(--ink); background:white; }
+    .form-footer { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
+    .toast { position:fixed; right:22px; bottom:22px; z-index:60; background:#1e382e; color:white; padding:12px 16px; border-radius:7px; box-shadow:var(--shadow); font-size:11px; opacity:0; transform:translateY(9px); transition:.2s; pointer-events:none; }
+    .toast.show { opacity:1; transform:translateY(0); }
+    .login-screen { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:20px; background:linear-gradient(130deg,#14211f 0%,#1d3028 55%,#26372f 100%); z-index:100; }
+    .login-box { background:#fff; width:min(410px,100%); border-radius:13px; padding:39px 38px; box-shadow:0 25px 80px rgba(0,0,0,.25); }
+    .login-brand { display:flex; align-items:center; gap:12px; margin-bottom:30px; }
+    .login-box h1 { font-size:26px; }
+    .login-box .subtitle { margin:7px 0 23px; line-height:1.7; }
+    .login-box .field { margin:14px 0; }
+    .login-box .button { width:100%; margin-top:9px; padding:12px; }
+    .login-error { min-height:15px; color:#b65348; font-size:10px; margin-top:8px; }
+    .security-note { border-top:1px solid var(--line); padding-top:14px; margin-top:17px; color:#8b938f; font-size:9px; line-height:1.6; }
+    .print-area { display:none; }
+    .backdrop { display:none; }
+    @media (max-width:1050px) {
+      .sidebar { width:224px; flex-basis:224px; }
+      .content { padding:27px 24px 40px; }
+      .topbar { padding:0 24px; }
+      .stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width:760px) {
+      .sidebar { position:fixed; top:0; bottom:0; transform:translateX(-100%); width:260px; }
+      .sidebar.open { transform:translateX(0); }
+      .backdrop.show { display:block; position:fixed; inset:0; z-index:19; background:rgba(8,19,16,.4); }
+      .menu-toggle { display:block; }
+      .topbar { height:64px; padding:0 16px; }
+      .top-date { display:none; }
+      .content { padding:24px 15px 35px; }
+      .page-heading { align-items:flex-start; flex-direction:column; }
+      .page-heading > .button { align-self:stretch; }
+      h1 { font-size:26px; }
+      .stats { gap:10px; }
+      .stat-card { padding:14px; }
+      .stat-value { font-size:22px; }
+      .overview-grid, .two-col { grid-template-columns:1fr; }
+      .school-year { font-size:9px; padding:7px; }
+      .table-toolbar { align-items:flex-start; flex-direction:column; }
+      .toolbar-actions { width:100%; }
+      .table-search { flex:1; min-width:0; }
+      .login-box { padding:30px 24px; }
+    }
+    @media (max-width:390px) {
+      .stats { grid-template-columns:1fr 1fr; }
+      .stat-title { font-size:10px; }
+      .stat-icon { width:27px; height:27px; }
+      .attendance { gap:12px; }
+      .donut { width:92px; height:92px; flex-basis:92px; }
+      .top-actions { gap:8px; }
+      .school-year { max-width:116px; }
+    }
+    @media print {
+      body * { visibility:hidden !important; }
+      #printArea, #printArea * { visibility:visible !important; }
+      #printArea { display:block; position:absolute; inset:0; padding:45px; color:#202a26; font:14px Georgia,serif; }
+      .print-header { text-align:center; border-bottom:2px solid #315b49; padding-bottom:18px; margin-bottom:26px; }
+      .print-header h1 { font-size:30px; margin:0 0 6px; }
+      .print-header p { margin:4px; }
+      .print-title { text-align:center; font-size:23px; margin:26px 0; text-transform:uppercase; letter-spacing:2px; }
+      .print-body { line-height:2.1; font-size:15px; }
+      .print-table { width:100%; margin-top:25px; border-collapse:collapse; }
+      .print-table th,.print-table td { border:1px solid #ccd4ce; padding:10px; text-align:left; }
+      .print-footer { display:flex; justify-content:space-between; margin-top:70px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-screen" id="loginScreen">
+    <div class="login-box">
+      <div class="login-brand">
+        <div class="brand-mark">R</div>
+        <div><div class="brand-name">RMV</div><div class="brand-sub">SCHOOL MANAGEMENT</div></div>
+      </div>
+      <div class="eyebrow">WELCOME BACK</div>
+      <h1>Sign in to your school</h1>
+      <p class="subtitle">Your school's operations, all in one place.</p>
+      <form id="loginForm">
+        <div class="field"><label for="loginId">Administrator ID</label><input id="loginId" autocomplete="username" required placeholder="Enter your administrator ID"></div>
+        <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Enter your password"></div>
+        <button class="button button-primary" type="submit">Sign in securely</button>
+        <div class="login-error" id="loginError" role="alert"></div>
+      </form>
+      <div class="security-note">Prototype access: ID <strong>rmv123</strong> · Password <strong>123rmv</strong>. This browser-only demo is not secure authentication; use a server-side identity provider before handling real student or payment data.</div>
+    </div>
+  </div>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><div class="brand-mark">R</div><div><div class="brand-name">RMV</div><div class="brand-sub">SCHOOL MANAGEMENT</div></div></div>
+      <div class="nav-label">SCHOOL OFFICE</div>
+      <nav class="nav" id="nav">
+        <button class="active" data-page="Overview"><span class="nav-icon">⌂</span>Overview</button>
+        <button data-page="Students"><span class="nav-icon">♙</span>Students <span class="nav-count" id="studentCount">0</span></button>
+        <button data-page="Fees & Accounts"><span class="nav-icon">◈</span>Fees &amp; Accounts</button>
+        <button data-page="Transport"><span class="nav-icon">⌁</span>Transport</button>
+        <button data-page="Teachers & Staff"><span class="nav-icon">♧</span>Teachers &amp; Staff</button>
+        <button data-page="Payroll"><span class="nav-icon">▤</span>Payroll</button>
+        <button data-page="Certificates"><span class="nav-icon">▧</span>Certificates &amp; TC</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="nav-label">ACADEMIC SESSION</div>
+        <div class="year-card"><small>CURRENT SESSION</small><strong>2025 — 2026</strong></div>
+        <div class="user-card"><div class="avatar">SA</div><div><div class="user-name">Super Admin</div><div class="user-role">School Administrator</div></div><button class="logout" id="logout" title="Sign out" aria-label="Sign out">↪</button></div>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="top-left"><button class="menu-toggle" id="menuToggle" aria-label="Open menu">☰</button><div class="crumb">School Office&nbsp;&nbsp; / &nbsp;&nbsp;<strong id="breadcrumb">Overview</strong></div></div>
+        <div class="top-actions"><div class="top-date" id="today"></div><div class="school-year">Academic year&nbsp; <strong>2025–26</strong></div></div>
+      </header>
+      <div class="content" id="content"></div>
+    </main>
+  </div>
+  <div class="overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal"><div class="modal-head"><h2 id="modalTitle">Add record</h2><button class="close" id="modalClose" aria-label="Close dialog">&times;</button></div><div class="modal-body" id="modalBody"></div></div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <div id="printArea" class="print-area"></div>
+  <script>
+    (() => {
+      "use strict";
+      const DEMO_ID = "rmv123";
+      const DEMO_PASSWORD = "123rmv";
+      const starter = {
+        students: [
+          { id:"RMV-1024", name:"Aarav Sharma", grade:"Class X · A", guardian:"Rajesh Sharma", phone:"98765 43210", fee:18500, paid:18500, route:"Route 01", status:"Active" },
+          { id:"RMV-1025", name:"Ananya Patel", grade:"Class VIII · B", guardian:"Meera Patel", phone:"98765 32109", fee:16000, paid:12000, route:"Route 02", status:"Active" },
+          { id:"RMV-1026", name:"Vivaan Kumar", grade:"Class IX · A", guardian:"Sanjay Kumar", phone:"98765 21098", fee:17500, paid:17500, route:"—", status:"Active" },
+          { id:"RMV-1027", name:"Diya Singh", grade:"Class VI · C", guardian:"Priya Singh", phone:"98765 10987", fee:14500, paid:10000, route:"Route 01", status:"Active" },
+          { id:"RMV-1028", name:"Arjun Mehta", grade:"Class VII · A", guardian:"Karan Mehta", phone:"98765 99887", fee:15000, paid:15000, route:"Route 03", status:"Active" }
+        ],
+        staff: [
+          { name:"Neha Verma", role:"Senior Teacher", department:"Mathematics", phone:"98765 43211", salary:42000, status:"Active" },
+          { name:"Rahul Das", role:"Teacher", department:"Science", phone:"98765 43212", salary:36000, status:"Active" },
+          { name:"Pooja Nair", role:"Administrator", department:"Office", phone:"98765 43213", salary:32000, status:"Active" },
+          { name:"Amit Yadav", role:"Transport", department:"Transport", phone:"98765 43214", salary:24000, status:"Active" }
+        ],
+        payments: [
+          { receipt:"RCP-26041", student:"Aarav Sharma", studentId:"RMV-1024", amount:18500, date:"2025-11-06", method:"UPI", purpose:"Annual fee" },
+          { receipt:"RCP-26040", student:"Ananya Patel", studentId:"RMV-1025", amount:6000, date:"2025-11-05", method:"Cash", purpose:"Tuition fee" },
+          { receipt:"RCP-26039", student:"Vivaan Kumar", studentId:"RMV-1026", amount:17500, date:"2025-11-04", method:"Bank transfer", purpose:"Annual fee" },
+          { receipt:"RCP-26038", student:"Diya Singh", studentId:"RMV-1027", amount:5000, date:"2025-11-03", method:"UPI", purpose:"Tuition fee" },
+          { receipt:"RCP-26037", student:"Arjun Mehta", studentId:"RMV-1028", amount:15000, date:"2025-11-02", method:"Bank transfer", purpose:"Annual fee" },
+          { receipt:"RCP-26036", student:"Diya Singh", studentId:"RMV-1027", amount:5000, date:"2025-11-01", method:"Cash", purpose:"Tuition fee" },
+          { receipt:"RCP-26035", student:"Ananya Patel", studentId:"RMV-1025", amount:6000, date:"2025-10-31", method:"UPI", purpose:"Tuition fee" }
+        ],
+        routes: [
+          { name:"Route 01 · North", vehicle:"RMV-01 · Bus", driver:"Amit Yadav", students:32, fee:1500, status:"Active" },
+          { name:"Route 02 · Central", vehicle:"RMV-02 · Bus", driver:"Suresh Pal", students:28, fee:1500, status:"Active" },
+          { name:"Route 03 · South", vehicle:"RMV-03 · Van", driver:"Manoj Rao", students:18, fee:1200, status:"Active" }
+        ],
+        docs: []
+      };
+      const loadData = () => {
+        try {
+          const saved = localStorage.getItem("rmv-erp-data");
+          return saved ? { ...starter, ...JSON.parse(saved) } : structuredClone(starter);
+        } catch (error) {
+          console.error("Could not load saved ERP data.", error);
+          return structuredClone(starter);
+        }
+      };
+      let data = loadData();
+      let page = "Overview";
+      let query = "";
+      const content = document.getElementById("content");
+      const money = n => "₹" + Number(n || 0).toLocaleString("en-IN");
+      const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+      const initials = name => String(name || "").split(/\s+/).slice(0,2).map(p=>p[0] || "").join("").toUpperCase();
+      const save = () => {
+        try { localStorage.setItem("rmv-erp-data", JSON.stringify(data)); }
+        catch (error) { console.error("Could not save ERP data.", error); toast("Could not save changes in this browser."); }
+      };
+      const toast = message => {
+        const el = document.getElementById("toast");
+        el.textContent = message; el.classList.add("show");
+        clearTimeout(toast.timer); toast.timer = setTimeout(()=>el.classList.remove("show"), 2800);
+      };
+      const dateText = value => new Date(value + "T12:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+      const setPage = next => {
+        page = next; query = "";
+        document.getElementById("breadcrumb").textContent = next;
+        document.querySelectorAll("#nav button").forEach(button=>button.classList.toggle("active",button.dataset.page===next));
+        document.getElementById("sidebar").classList.remove("open");
+        document.getElementById("backdrop").classList.remove("show");
+        render();
+      };
+      const pageHeading = (title, subtitle, action="") => `<div class="page-heading"><div><div class="eyebrow">RMV SCHOOL · 2025–26</div><h1>${title}</h1><div class="subtitle">${subtitle}</div></div>${action}</div>`;
+      const stats = items => `<div class="grid stats">${items.map(x=>`<div class="card stat-card"><div class="stat-top"><div class="stat-title">${x.title}</div><div class="stat-icon ${x.color||""}">${x.icon}</div></div><div class="stat-value">${x.value}</div><div class="stat-foot"><span class="${x.trend?'positive':''}">${x.trend||""}</span>${x.foot||""}</div></div>`).join("")}</div>`;
+      const studentRows = rows => rows.length ? rows.map(s=>`<tr><td><div class="student-cell"><span class="table-avatar">${esc(initials(s.name))}</span>${esc(s.name)}</div></td><td>${esc(s.id)}</td><td>${esc(s.grade)}</td><td>${esc(s.guardian)}</td><td>${esc(s.phone)}</td><td>${money(s.fee)}</td><td><span class="status ${s.status==="Active"?"":"inactive"}">${esc(s.status)}</span></td><td><button class="text-link" data-action="student-doc" data-id="${esc(s.id)}">Documents</button></td></tr>`).join("") : `<tr><td colspan="8" class="empty">No students found.</td></tr>`;
+      const table = (headers, rows, emptyText="No records yet.") => `<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows || `<tr><td colspan="${headers.length}" class="empty">${emptyText}</td></tr>`}</tbody></table></div>`;
+      const filterData = items => items.filter(item=>Object.values(item).some(value=>String(value).toLowerCase().includes(query.toLowerCase())));
+      const overview = () => {
+        const collected = data.payments.reduce((sum,p)=>sum+Number(p.amount),0);
+        const due = data.students.reduce((sum,s)=>sum+Math.max(0,Number(s.fee)-Number(s.paid)),0);
+        const payroll = data.staff.reduce((sum,s)=>sum+Number(s.salary),0);
+        const bars = [["Jun",62,36],["Jul",73,43],["Aug",58,40],["Sep",88,52],["Oct",71,44],["Nov",94,61]];
+        const latest = data.payments.slice(0,4).map(p=>`<tr><td><div class="student-cell"><span class="table-avatar">${esc(initials(p.student))}</span>${esc(p.student)}</div></td><td>${esc(p.receipt)}</td><td>${dateText(p.date)}</td><td>${money(p.amount)}</td><td><span class="status">Paid</span></td></tr>`).join("");
+        return pageHeading("Good morning, Admin","Here is what's happening at your school today.",`<button class="button button-primary" data-action="collect-fee">＋ Collect fee</button>`) +
+          stats([
+            {title:"Total students",value:data.students.length.toLocaleString("en-IN"),icon:"♙",trend:"↑ 8.2%",foot:" vs. last session"},
+            {title:"Fee collected",value:money(collected),icon:"◈",color:"gold",trend:"↑ 12.4%",foot:" collected this session"},
+            {title:"Outstanding fees",value:money(due),icon:"◷",color:"rose",foot:" across enrolled students"},
+            {title:"Monthly payroll",value:money(payroll),icon:"▤",color:"gold",foot:` for ${data.staff.length} employees`}
+          ]) +
+          `<div class="grid overview-grid"><section class="card panel"><div class="panel-heading"><div><div class="panel-title">Financial overview</div><div class="panel-note">Income and expenses · last 6 months</div></div><select class="select-small" aria-label="Financial period"><option>2025–26</option></select></div><div class="chart">${bars.map(([label,inc,exp])=>`<div class="chart-col"><div class="bar-pair"><i class="bar income" style="height:${inc}%"></i><i class="bar expense" style="height:${exp}%"></i></div><span class="chart-label">${label}</span></div>`).join("")}</div><div class="legend"><span><i></i>Income</span><span><i></i>Expenses</span></div></section><section class="card panel"><div class="panel-heading"><div><div class="panel-title">Today's attendance</div><div class="panel-note">Student attendance snapshot</div></div><span class="status">Live</span></div><div class="attendance"><div class="donut"><span>88%</span></div><div class="attendance-copy"><strong>Students present</strong><small>Based on today's attendance<br>Updated this morning</small></div></div><div class="mini-list"><div class="mini-item"><strong>Present</strong><div class="mini-meter"><i style="width:88%"></i></div><span>88%</span></div><div class="mini-item"><strong>Absent</strong><div class="mini-meter"><i style="width:12%;background:#c59a72"></i></div><span>12%</span></div></div></section></div>` +
+          `<section class="card table-panel"><div class="table-toolbar"><div><div class="panel-title">Recent fee collections</div><div class="panel-note">Latest payments recorded by the office</div></div><button class="text-link" data-page-link="Fees & Accounts">View all →</button></div>${table(["Student","Receipt no.","Date","Amount","Status"],latest,"No fee collections yet.")}</section>`;
+      };
+      const studentsPage = () => {
+        const rows=filterData(data.students);
+        return pageHeading("Students","Manage student profiles, enrollment and fee details.",`<button class="button button-primary" data-action="add-student">＋ Add student</button>`) +
+          stats([{title:"Enrolled students",value:data.students.length,icon:"♙",trend:"Active",foot:" in current session"},{title:"Fees outstanding",value:money(data.students.reduce((n,s)=>n+Math.max(0,s.fee-s.paid),0)),icon:"◈",color:"gold",foot:" total balance due"},{title:"On transport",value:data.students.filter(s=>s.route!=="—").length,icon:"⌁",color:"rose",foot:" students assigned"}]) +
+          `<section class="card table-panel"><div class="table-toolbar"><div><div class="panel-title">Student directory</div><div class="panel-note">${rows.length} records</div></div><div class="toolbar-actions"><input class="table-search" data-search placeholder="Search students…" value="${esc(query)}" aria-label="Search students"><button class="button button-outline" data-action="export-students">Export CSV</button></div></div>${table(["Student","Student ID","Class","Guardian","Phone","Annual fee","Status",""],studentRows(rows))}</section>`;
+      };
+      const feesPage = () => {
+        const rows=filterData(data.payments);
+        const collected=data.payments.reduce((n,p)=>n+Number(p.amount),0);
+        const due=data.students.reduce((n,s)=>n+Math.max(0,s.fee-s.paid),0);
+        const feeRows=rows.map(p=>`<tr><td>${esc(p.receipt)}</td><td><div class="student-cell"><span class="table-avatar">${esc(initials(p.student))}</span>${esc(p.student)}</div></td><td>${esc(p.purpose)}</td><td>${dateText(p.date)}</td><td>${esc(p.method)}</td><td><strong>${money(p.amount)}</strong></td><td><button class="text-link" data-action="receipt" data-id="${esc(p.receipt)}">Print receipt</button></td></tr>`).join("");
+        return pageHeading("Fees & Accounts","Track collections, outstanding balances and school accounts.",`<button class="button button-primary" data-action="collect-fee">＋ Collect fee</button>`) +
+          stats([{title:"Collected this session",value:money(collected),icon:"◈",trend:"Recorded",foot:" in fee payments"},{title:"Outstanding balance",value:money(due),icon:"◷",color:"rose",foot:" student fees due"},{title:"Collection records",value:data.payments.length,icon:"▤",color:"gold",foot:" receipts generated"}]) +
+          `<section class="card table-panel"><div class="table-toolbar"><div><div class="panel-title">Fee transactions</div><div class="panel-note">Recorded collections and printable receipts</div></div><div class="toolbar-actions"><input class="table-search" data-search placeholder="Search transactions…" value="${esc(query)}" aria-label="Search transactions"><button class="button button-outline" data-action="export-fees">Export CSV</button></div></div>${table(["Receipt no.","Student","Description","Date","Method","Amount",""],feeRows,"No payments match your search.")}</section>`;
+      };
+      const transportPage = () => {
+        const rows=filterData(data.routes).map(r=>`<tr><td><strong>${esc(r.name)}</strong></td><td>${esc(r.vehicle)}</td><td>${esc(r.driver)}</td><td>${r.students}</td><td>${money(r.fee)} / month</td><td><span class="status">${esc(r.status)}</span></td><td><button class="text-link" data-action="edit-route" data-id="${esc(r.name)}">Edit</button></td></tr>`).join("");
+        return pageHeading("Transport","Manage school routes, vehicles, drivers and monthly charges.",`<button class="button button-primary" data-action="add-route">＋ Add route</button>`) +
+          stats([{title:"Active routes",value:data.routes.length,icon:"⌁",trend:"Operational",foot:" school routes"},{title:"Students using transport",value:data.students.filter(s=>s.route!=="—").length,icon:"♙",color:"gold",foot:" assigned to routes"},{title:"Route vehicles",value:data.routes.length,icon:"▰",color:"rose",foot:" in service"}]) +
+          `<section class="card table-panel"><div class="table-toolbar"><div><div class="panel-title">Route directory</div><div class="panel-note">Route assignments and monthly fees</div></div><div class="toolbar-actions"><input class="table-search" data-search placeholder="Search routes…" value="${esc(query)}" aria-label="Search routes"></div></div>${table(["Route","Vehicle","Driver","Students","Monthly fee","Status",""],rows)}</section>`;
+      };
+      const staffPage = () => {
+        const rows=filterData(data.staff).map(s=>`<tr><td><div class="student-cell"><span class="table-avatar">${esc(initials(s.name))}</span>${esc(s.name)}</div></td><td>${esc(s.role)}</td><td>${esc(s.department)}</td><td>${esc(s.phone)}</td><td>${money(s.salary)}</td><td><span class="status">${esc(s.status)}</span></td></tr>`).join("");
+        return pageHeading("Teachers & Staff","Keep your people directory and monthly compensation up to date.",`<button class="button button-primary" data-action="add-staff">＋ Add employee</button>`) +
+          stats([{title:"Employees",value:data.staff.length,icon:"♧",trend:"Active",foot:" in the school directory"},{title:"Monthly payroll",value:money(data.staff.reduce((n,s)=>n+s.salary,0)),icon:"▤",color:"gold",foot:" total salary commitment"},{title:"Annual payroll",value:money(data.staff.reduce((n,s)=>n+s.salary,0)*12),icon:"◈",color:"rose",foot:" projected employee payout"}]) +
+          `<section class="card table-panel"><div class="table-toolbar"><div><div class="panel-title">Staff directory</div><div class="panel-note">Roles, departments and monthly salaries</div></div><div class="toolbar-actions"><input class="table-search" data-search placeholder="Search employees…" value="${esc(query)}" aria-label="Search employees"></div></div>${table(["Employee","Designation","Department","Phone","Monthly salary","Status"],rows)}</section>`;
+      };
+      const payrollPage = () => {
+        const rows=filterData(data.staff).map(s=>`<tr><td><div class="student-cell"><span class="table-avatar">${esc(initials(s.name))}</span>${esc(s.name)}</div></td><td>${esc(s.role)}</td><td>November 2025</td><td>${money(s.salary)}</td><td><span class="status">Processed</span></td><td><button class="text-link" data-action="payslip" data-id="${esc(s.name)}">Payslip</button></td></tr>`).join("");
+        return pageHeading("Payroll","Monthly and annual employee payout overview.",`<button class="button button-gold" data-action="payroll-summary">Print summary</button>`) +
+          stats([{title:"Monthly payout",value:money(data.staff.reduce((n,s)=>n+s.salary,0)),icon:"▤",trend:"November 2025",foot:" payroll total"},{title:"Annual payout",value:money(data.staff.reduce((n,s)=>n+s.salary,0)*12),icon:"◈",color:"gold",foot:" projected for 12 months"},{title:"Employees",value:data.staff.length,icon:"♧",color:"rose",foot:" included this month"}]) +
+          `<section class="card table-panel"><div class="table-toolbar"><div><div class="panel-title">Monthly payroll register</div><div class="panel-note">Estimated payouts based on the staff salary details</div></div><div class="toolbar-actions"><input class="table-search" data-search placeholder="Search employees…" value="${esc(query)}" aria-label="Search payroll"></div></div>${table(["Employee","Designation","Pay period","Monthly amount","Status",""],rows)}</section>`;
+      };
+      const certPage = () => {
+        const rows=filterData(data.students).map(s=>`<tr><td><div class="student-cell"><span class="table-avatar">${esc(initials(s.name))}</span>${esc(s.name)}</div></td><td>${esc(s.id)}</td><td>${esc(s.grade)}</td><td>${esc(s.guardian)}</td><td><button class="text-link" data-action="certificate" data-id="${esc(s.id)}">Certificate</button><button class="text-link" data-action="tc" data-id="${esc(s.id)}">Transfer (TC)</button></td></tr>`).join("");
+        return pageHeading("Certificates & TC","Generate print-ready student certificates and transfer certificates.",`<button class="button button-outline" data-action="certificate-help">Document guide</button>`) +
+          `<div class="grid two-col" style="margin-bottom:18px"><div class="card document-card"><div class="document-icon">▧</div><div><strong>Study certificate</strong><p>Generate an official enrollment certificate for a student.</p></div></div><div class="card document-card"><div class="document-icon">⇢</div><div><strong>Transfer certificate</strong><p>Prepare a printable school transfer certificate.</p></div></div></div>` +
+          `<section class="card table-panel"><div class="table-toolbar"><div><div class="panel-title">Select a student</div><div class="panel-note">Choose a document to prepare for printing</div></div><input class="table-search" data-search placeholder="Search students…" value="${esc(query)}" aria-label="Search students"></div>${table(["Student","Student ID","Class","Guardian","Generate document"],rows)}</section>`;
+      };
+      const render = () => {
+        document.getElementById("studentCount").textContent=data.students.length;
+        const screens={"Overview":overview,"Students":studentsPage,"Fees & Accounts":feesPage,"Transport":transportPage,"Teachers & Staff":staffPage,"Payroll":payrollPage,"Certificates":certPage};
+        content.innerHTML=(screens[page] || overview)();
+      };
+      const openModal = (title, fields, submitText, onSubmit) => {
+        document.getElementById("modalTitle").textContent=title;
+        document.getElementById("modalBody").innerHTML=`<form id="recordForm"><div class="form-grid">${fields.map(f=>`<div class="field ${f.full?"full":""}"><label for="field-${f.name}">${esc(f.label)}</label>${f.options?`<select id="field-${f.name}" name="${f.name}" ${f.required===false?"":"required"}>${f.options.map(o=>`<option value="${esc(o.value)}">${esc(o.label)}</option>`).join("")}</select>`:`<input id="field-${f.name}" name="${f.name}" type="${f.type||"text"}" ${f.required===false?"":"required"} ${f.min!==undefined?`min="${f.min}"`:""} ${f.placeholder?`placeholder="${esc(f.placeholder)}"`:""}>`}</div>`).join("")}</div><div class="form-footer"><button type="button" class="button button-outline" data-action="close-modal">Cancel</button><button class="button button-primary" type="submit">${submitText}</button></div></form>`;
+        document.getElementById("modalOverlay").classList.add("open");
+        document.getElementById("recordForm").addEventListener("submit",event=>{
+          event.preventDefault(); const values=Object.fromEntries(new FormData(event.currentTarget).entries());
+          onSubmit(values); closeModal();
+        });
+        document.getElementById("field-"+fields[0].name)?.focus();
+      };
+      const closeModal=()=>document.getElementById("modalOverlay").classList.remove("open");
+      const collectFee = () => {
+        if(!data.students.length) return toast("Add a student before recording a fee.");
+        openModal("Record fee payment",[
+          {name:"studentId",label:"Student",options:data.students.map(s=>({value:s.id,label:`${s.name} · ${s.id}`}))},
+          {name:"amount",label:"Amount (₹)",type:"number",min:"1"},
+          {name:"purpose",label:"Fee description",options:[{value:"Tuition fee",label:"Tuition fee"},{value:"Annual fee",label:"Annual fee"},{value:"Transport fee",label:"Transport fee"},{value:"Examination fee",label:"Examination fee"},{value:"Other",label:"Other"}]},
+          {name:"method",label:"Payment method",options:[{value:"Cash",label:"Cash"},{value:"UPI",label:"UPI"},{value:"Bank transfer",label:"Bank transfer"},{value:"Card",label:"Card"}]}
+        ],"Save payment",values=>{
+          const student=data.students.find(s=>s.id===values.studentId), amount=Number(values.amount);
+          if(!student || !Number.isFinite(amount) || amount<=0) return toast("Enter a valid payment amount.");
+          student.paid=Number(student.paid)+amount;
+          const payment={receipt:`RCP-${Date.now().toString().slice(-6)}`,student:student.name,studentId:student.id,amount,date:new Date().toISOString().slice(0,10),method:values.method,purpose:values.purpose};
+          data.payments.unshift(payment); save(); render(); toast("Fee payment recorded."); printReceipt(payment);
+        });
+      };
+      const addStudent = () => openModal("Add student",[
+        {name:"name",label:"Student full name"},{name:"grade",label:"Class / section",placeholder:"e.g. Class VIII · A"},
+        {name:"guardian",label:"Parent / guardian"},{name:"phone",label:"Contact number",type:"tel"},
+        {name:"fee",label:"Annual fee (₹)",type:"number",min:"0"},{name:"route",label:"Transport route",options:[{value:"—",label:"No transport"},...data.routes.map(r=>({value:r.name,label:r.name}))]}
+      ],"Add student",v=>{
+        const id=`RMV-${String(Math.max(1028,...data.students.map(s=>Number(s.id.slice(4))||0))+1).padStart(4,"0")}`;
+        data.students.unshift({id,name:v.name.trim(),grade:v.grade.trim(),guardian:v.guardian.trim(),phone:v.phone.trim(),fee:Number(v.fee),paid:0,route:v.route,status:"Active"});
+        save();render();toast(`Student ${id} added.`);
+      });
+      const addStaff = () => openModal("Add employee",[
+        {name:"name",label:"Full name"},{name:"role",label:"Designation"},
+        {name:"department",label:"Department"},{name:"phone",label:"Contact number",type:"tel"},
+        {name:"salary",label:"Monthly salary (₹)",type:"number",min:"0"},{name:"status",label:"Status",options:[{value:"Active",label:"Active"},{value:"Inactive",label:"Inactive"}]}
+      ],"Add employee",v=>{data.staff.unshift({...v,name:v.name.trim(),salary:Number(v.salary)});save();render();toast("Employee added to staff directory.");});
+      const addRoute = () => openModal("Add transport route",[
+        {name:"name",label:"Route name"},{name:"vehicle",label:"Vehicle / registration"},
+        {name:"driver",label:"Driver name"},{name:"students",label:"Student capacity",type:"number",min:"1"},
+        {name:"fee",label:"Monthly fee per student (₹)",type:"number",min:"0"},{name:"status",label:"Status",options:[{value:"Active",label:"Active"},{value:"Inactive",label:"Inactive"}]}
+      ],"Add route",v=>{data.routes.push({...v,students:Number(v.students),fee:Number(v.fee)});save();render();toast("Transport route added.");});
+      const print = (title, body, footer=true) => {
+        document.getElementById("printArea").innerHTML=`<div class="print-header"><h1>RMV School</h1><p>School Management Office</p><p>Official Student Record · Academic Session 2025–2026</p></div><div class="print-title">${title}</div><div class="print-body">${body}</div>${footer?`<div class="print-footer"><span>________________________<br>School Administrator</span><span>________________________<br>School Seal</span></div>`:""}`;
+        window.print();
+      };
+      const printReceipt = p => print("Fee Receipt",`<p><strong>Receipt No.:</strong> ${esc(p.receipt)} &nbsp;&nbsp; <strong>Date:</strong> ${dateText(p.date)}</p><p><strong>Received from:</strong> ${esc(p.student)} (${esc(p.studentId)})</p><table class="print-table"><thead><tr><th>Description</th><th>Payment method</th><th>Amount</th></tr></thead><tbody><tr><td>${esc(p.purpose)}</td><td>${esc(p.method)}</td><td>${money(p.amount)}</td></tr><tr><th colspan="2">Total received</th><th>${money(p.amount)}</th></tr></tbody></table><p style="margin-top:24px">Amount received: <strong>${money(p.amount)}</strong></p>`);
+      const makeDocument = (id,type) => {
+        const s=data.students.find(item=>item.id===id); if(!s) return toast("Student record was not found.");
+        if(type==="certificate") print("Study Certificate",`<p style="text-align:center;margin:35px 0">This is to certify that <strong>${esc(s.name)}</strong>, child of <strong>${esc(s.guardian)}</strong>, is a student of this institution in <strong>${esc(s.grade)}</strong> during the academic session 2025–2026.</p><p style="text-align:center">This certificate is issued upon request for official purposes.</p><p style="margin-top:35px"><strong>Student ID:</strong> ${esc(s.id)}</p>`);
+        else print("Transfer Certificate",`<p>This is to certify that <strong>${esc(s.name)}</strong>, child of <strong>${esc(s.guardian)}</strong>, was enrolled in <strong>${esc(s.grade)}</strong> at this institution.</p><table class="print-table"><tbody><tr><th>Student ID</th><td>${esc(s.id)}</td></tr><tr><th>Class / Section</th><td>${esc(s.grade)}</td></tr><tr><th>Parent / Guardian</th><td>${esc(s.guardian)}</td></tr><tr><th>Date of issue</th><td>${dateText(new Date().toISOString().slice(0,10))}</td></tr><tr><th>Reason for leaving</th><td>___________________________________</td></tr></tbody></table><p style="margin-top:25px">The student bears a good moral character to the best of our knowledge.</p>`);
+      };
+      const csv = (filename, headers, rows) => {
+        const quote=value=>`"${String(value??"").replace(/"/g,'""')}"`;
+        const text=[headers,...rows].map(row=>row.map(quote).join(",")).join("\r\n");
+        const link=document.createElement("a"); link.href=URL.createObjectURL(new Blob([text],{type:"text/csv;charset=utf-8"})); link.download=filename; link.click(); URL.revokeObjectURL(link.href);
+      };
+      const handleAction = (action,id) => {
+        if(action==="collect-fee") return collectFee();
+        if(action==="add-student") return addStudent();
+        if(action==="add-staff") return addStaff();
+        if(action==="add-route") return addRoute();
+        if(action==="close-modal") return closeModal();
+        if(action==="receipt") { const p=data.payments.find(x=>x.receipt===id); if(p) printReceipt(p); return; }
+        if(action==="certificate") return makeDocument(id,"certificate");
+        if(action==="tc") return makeDocument(id,"tc");
+        if(action==="student-doc") {
+          const s=data.students.find(x=>x.id===id); if(!s) return;
+          openModal(`Documents · ${s.name}`,[{name:"document",label:"Choose document",options:[{value:"certificate",label:"Study certificate"},{value:"tc",label:"Transfer certificate"}]}],"Prepare document",v=>makeDocument(id,v.document)); return;
+        }
+        if(action==="edit-route") {
+          const r=data.routes.find(x=>x.name===id); if(!r) return;
+          openModal("Edit transport route",[{name:"name",label:"Route name",placeholder:"Current: "+r.name},{name:"vehicle",label:"Vehicle / registration"},{name:"driver",label:"Driver name"},{name:"students",label:"Student capacity",type:"number",min:"1"},{name:"fee",label:"Monthly fee per student (₹)",type:"number",min:"0"}],"Save route",v=>{Object.assign(r,{name:v.name||r.name,vehicle:v.vehicle||r.vehicle,driver:v.driver||r.driver,students:Number(v.students)||r.students,fee:Number(v.fee)||r.fee});save();render();toast("Route updated.");});
+          ["name","vehicle","driver","students","fee"].forEach(key=>{const el=document.getElementById("field-"+key);if(el)el.value=r[key]});
+          return;
+        }
+        if(action==="export-students") return csv("rmv-students.csv",["Student ID","Name","Class","Guardian","Phone","Annual fee","Paid","Transport"],data.students.map(s=>[s.id,s.name,s.grade,s.guardian,s.phone,s.fee,s.paid,s.route]));
+        if(action==="export-fees") return csv("rmv-fee-transactions.csv",["Receipt","Student","Student ID","Date","Purpose","Method","Amount"],data.payments.map(p=>[p.receipt,p.student,p.studentId,p.date,p.purpose,p.method,p.amount]));
+        if(action==="payslip") { const s=data.staff.find(x=>x.name===id); if(s) print("Salary Statement",`<p><strong>Employee:</strong> ${esc(s.name)}</p><p><strong>Designation:</strong> ${esc(s.role)} · ${esc(s.department)}</p><p><strong>Pay period:</strong> November 2025</p><table class="print-table"><tbody><tr><th>Monthly salary</th><td>${money(s.salary)}</td></tr><tr><th>Deductions</th><td>${money(0)}</td></tr><tr><th>Net payout</th><td><strong>${money(s.salary)}</strong></td></tr></tbody></table>`); return; }
+        if(action==="payroll-summary") return print("Monthly Payroll Summary",`<p><strong>Pay period:</strong> November 2025</p><table class="print-table"><thead><tr><th>Employee</th><th>Designation</th><th>Monthly payout</th></tr></thead><tbody>${data.staff.map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.role)}</td><td>${money(s.salary)}</td></tr>`).join("")}<tr><th colspan="2">Total payout</th><th>${money(data.staff.reduce((n,s)=>n+s.salary,0))}</th></tr></tbody></table>`);
+        if(action==="certificate-help") return toast("Choose a student, then select Certificate or Transfer (TC).");
+      };
+      document.getElementById("nav").addEventListener("click",event=>{const button=event.target.closest("[data-page]");if(button)setPage(button.dataset.page);});
+      content.addEventListener("click",event=>{
+        const action=event.target.closest("[data-action]");
+        if(action) handleAction(action.dataset.action,action.dataset.id);
+        const link=event.target.closest("[data-page-link]");if(link)setPage(link.dataset.pageLink);
+      });
+      content.addEventListener("input",event=>{
+        if(event.target.matches("[data-search]")) { const start=event.target.selectionStart;query=event.target.value;render();const next=content.querySelector("[data-search]");if(next){next.focus();next.setSelectionRange(start,start);} }
+      });
+      document.getElementById("modalOverlay").addEventListener("click",event=>{if(event.target.id==="modalOverlay")closeModal();});
+      document.getElementById("modalClose").addEventListener("click",closeModal);
+      document.addEventListener("keydown",event=>{if(event.key==="Escape")closeModal();});
+      document.getElementById("menuToggle").addEventListener("click",()=>{document.getElementById("sidebar").classList.toggle("open");document.getElementById("backdrop").classList.toggle("show");});
+      document.getElementById("backdrop").addEventListener("click",()=>{document.getElementById("sidebar").classList.remove("open");document.getElementById("backdrop").classList.remove("show");});
+      document.getElementById("today").textContent=new Date().toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+      document.getElementById("loginForm").addEventListener("submit",event=>{
+        event.preventDefault();
+        if(document.getElementById("loginId").value===DEMO_ID && document.getElementById("loginPassword").value===DEMO_PASSWORD) {
+          sessionStorage.setItem("rmv-demo-auth","1");document.getElementById("loginScreen").style.display="none";document.getElementById("loginError").textContent="";
+        } else document.getElementById("loginError").textContent="The administrator ID or password is incorrect.";
+      });
+      document.getElementById("logout").addEventListener("click",()=>{sessionStorage.removeItem("rmv-demo-auth");document.getElementById("loginScreen").style.display="flex";document.getElementById("loginPassword").value="";});
+      if(sessionStorage.getItem("rmv-demo-auth")==="1") document.getElementById("loginScreen").style.display="none";
+      render();
+    })();
+  </script>
+</body>
+</html>
